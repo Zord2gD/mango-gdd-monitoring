@@ -614,7 +614,7 @@
             const data = await res.json();
             
             if(data.error) {
-                alert(data.error);
+                showToast(data.error, 'error');
                 chartCanvas.style.opacity = '1';
                 return;
             }
@@ -697,6 +697,55 @@
         kebunSelect.selectedIndex = 1;
         loadSuhu(kebunSelect.value);
     }
+</script>
+
+<!-- ═══ TOAST NOTIFICATION SYSTEM ═══ -->
+<div id="toast-container" style="position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:10px;pointer-events:none;"></div>
+
+<style>
+.toast-item {
+    display: flex; align-items: flex-start; gap: 12px;
+    min-width: 300px; max-width: 380px;
+    padding: 14px 16px; border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    font-family: 'Inter', sans-serif; font-size: 13.5px;
+    pointer-events: all; cursor: pointer;
+    animation: toastIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    backdrop-filter: blur(12px);
+}
+.toast-item.success { background: #dcfce7; color: #14532d; border-left: 4px solid #16a34a; }
+.toast-item.error   { background: #fee2e2; color: #7f1d1d; border-left: 4px solid #dc2626; }
+.toast-item.info    { background: #dbeafe; color: #1e3a5f; border-left: 4px solid #2563eb; }
+.toast-item.warning { background: #fef9c3; color: #713f12; border-left: 4px solid #ca8a04; }
+.toast-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+.toast-msg  { flex: 1; line-height: 1.5; }
+.toast-close { font-size: 16px; opacity: 0.5; flex-shrink: 0; background: none; border: none; cursor: pointer; color: inherit; padding: 0; line-height: 1; }
+.toast-close:hover { opacity: 1; }
+.toast-out { animation: toastOut 0.3s ease forwards; }
+@keyframes toastIn  { from { opacity:0; transform:translateX(40px); } to { opacity:1; transform:translateX(0); } }
+@keyframes toastOut { from { opacity:1; transform:translateX(0); }  to { opacity:0; transform:translateX(40px); } }
+</style>
+
+<script>
+function showToast(message, type = 'info', duration = 4000) {
+    const icons = { success: '✅', error: '❌', info: 'ℹ️', warning: '⚠️' };
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = `toast-item ${type}`;
+    toast.innerHTML = `
+        <span class="toast-icon">${icons[type] || 'ℹ️'}</span>
+        <span class="toast-msg">${message}</span>
+        <button class="toast-close" onclick="removeToast(this.parentElement)">✕</button>
+    `;
+    container.appendChild(toast);
+    const timer = setTimeout(() => removeToast(toast), duration);
+    toast.addEventListener('click', () => { clearTimeout(timer); removeToast(toast); });
+}
+function removeToast(el) {
+    if (!el || !el.parentElement) return;
+    el.classList.add('toast-out');
+    setTimeout(() => el.remove(), 300);
+}
 </script>
 
 </body>

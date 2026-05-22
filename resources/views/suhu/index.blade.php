@@ -174,6 +174,15 @@
     @endforeach
 @endif
 
+{{-- Pagination: tampil jika data lebih dari 100 baris --}}
+@if(isset($suhu) && $suhu->hasPages())
+    <div class="d-flex justify-content-center mt-4 mb-3">
+        <nav aria-label="Navigasi halaman data suhu">
+            {{ $suhu->links('pagination::bootstrap-5') }}
+        </nav>
+    </div>
+@endif
+
 <script>
 function syncData(kebunId) {
     if (!confirm('Tarik data cuaca dari tanggal berbunga hingga hari ini? (Maksimal 92 hari terakhir)')) return;

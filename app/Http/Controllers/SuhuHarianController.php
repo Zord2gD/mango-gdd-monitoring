@@ -6,22 +6,23 @@ use Illuminate\Http\Request;
 use App\Models\SuhuHarian;
 use App\Models\Kebun;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Requests\StoreSuhuRequest;
 
 class SuhuHarianController extends Controller
 {
     public function index()
     {
         if (Auth::user()->role === 'admin') {
-            // Admin melihat SEMUA suhu harian dari semua kebun
-            $suhu = SuhuHarian::with('kebun.user')->orderBy('tanggal', 'asc')->get();
+            // Admin melihat SEMUA suhu harian dari semua kebun, dengan pagination
+            $suhu = SuhuHarian::with('kebun.user')->orderBy('tanggal', 'desc')->paginate(100);
         } else {
-            // Petani hanya melihat suhu dari kebunnya sendiri
+            // Petani hanya melihat suhu dari kebunnya sendiri, dengan pagination
             $suhu = SuhuHarian::whereHas('kebun', function ($q) {
                 $q->where('user_id', Auth::id());
-            })->with('kebun')->orderBy('tanggal', 'asc')->get();
+            })->with('kebun')->orderBy('tanggal', 'desc')->paginate(100);
         }
-        
-        $suhuGrouped = $suhu->groupBy('kebun_id');
+
+        $suhuGrouped = $suhu->getCollection()->groupBy('kebun_id');
 
         // Total GDD per kebun (respects tanggal_berbunga)
         if (Auth::user()->role === 'admin') {
@@ -56,27 +57,17 @@ class SuhuHarianController extends Controller
         return view('suhu.create', compact('kebun'));
     }
 
-    public function store(Request $request)
+    public function store(StoreSuhuRequest $request)
     {
-        if (Auth::user()->role === 'admin') {
-            return redirect('/admin/dashboard');
-        }
+        // Validasi sudah dihandle StoreSuhuRequest
+        // Authorize: hanya petani (dicek di Form Request)
 
-        $request->validate([
-            'kebun_id' => 'required|exists:kebuns,id',
-            'tanggal'  => 'required|date',
-            'tmax'     => 'required|numeric',
-            'tmin'     => 'required|numeric|lte:tmax'
-        ], [
-            'tmin.lte' => 'Tmin tidak boleh lebih besar dari Tmax.'
-        ]);
-
-        // Pastikan kebun milik petani ini
+        // Pastikan kebun benar-benar milik petani ini
         Kebun::where('id', $request->kebun_id)
              ->where('user_id', Auth::id())
              ->firstOrFail();
 
-        // Prevent duplicate: same date + same kebun
+        // Cegah data duplikat: kebun + tanggal yang sama
         $exists = SuhuHarian::where('kebun_id', $request->kebun_id)
             ->where('tanggal', $request->tanggal)
             ->exists();
@@ -85,6 +76,7 @@ class SuhuHarianController extends Controller
             return redirect('/suhu')->with('error', 'Data suhu untuk kebun ini pada tanggal tersebut sudah ada.');
         }
 
+        // Hitung GDD: ((Tmax + Tmin) / 2) - Tbase(10)
         $gdd = max(0, (($request->tmax + $request->tmin) / 2) - 10);
 
         SuhuHarian::create([

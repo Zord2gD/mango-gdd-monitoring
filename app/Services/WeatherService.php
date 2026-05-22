@@ -4,6 +4,7 @@ namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Cache;
 
 class WeatherService
 {
@@ -49,8 +50,27 @@ class WeatherService
      */
     public function getWeatherData(float $latitude, float $longitude, int $forecastDays = 7, int $pastDays = 0): ?array
     {
+        // Untuk data forecast biasa (bukan historis), gunakan cache 30 menit.
+        // Ini mencegah N+1 API call saat halaman /cuaca dibuka dengan banyak kebun.
+        if ($pastDays === 0) {
+            $cacheKey = sprintf('weather_%.4f_%.4f_%d', $latitude, $longitude, $forecastDays);
+            return Cache::remember($cacheKey, 1800, function () use ($latitude, $longitude, $forecastDays, $pastDays) {
+                return $this->fetchWeatherFromApi($latitude, $longitude, $forecastDays, $pastDays);
+            });
+        }
+
+        // Data historis (sync) tidak di-cache karena bersifat satu kali
+        return $this->fetchWeatherFromApi($latitude, $longitude, $forecastDays, $pastDays);
+    }
+
+    /**
+     * Internal method: lakukan HTTP call ke Open-Meteo API.
+     */
+    protected function fetchWeatherFromApi(float $latitude, float $longitude, int $forecastDays, int $pastDays): ?array
+    {
         try {
-            $response = Http::withoutVerifying()->timeout(10)->get($this->baseUrl, [
+            $sslVerify = ! in_array(config('app.env'), ['local', 'testing']);
+            $response = Http::withOptions(['verify' => $sslVerify])->timeout(10)->get($this->baseUrl, [
                 'latitude'      => $latitude,
                 'longitude'     => $longitude,
                 'daily'         => 'temperature_2m_max,temperature_2m_min,precipitation_sum,weathercode',
@@ -92,7 +112,8 @@ class WeatherService
     public function getTodayTemperature(float $latitude, float $longitude): ?array
     {
         try {
-            $response = Http::withoutVerifying()->timeout(10)->get($this->baseUrl, [
+            $sslVerify = ! in_array(config('app.env'), ['local', 'testing']);
+            $response = Http::withOptions(['verify' => $sslVerify])->timeout(10)->get($this->baseUrl, [
                 'latitude'      => $latitude,
                 'longitude'     => $longitude,
                 'daily'         => 'temperature_2m_max,temperature_2m_min',

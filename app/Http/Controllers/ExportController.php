@@ -9,7 +9,7 @@ class ExportController extends Controller
     // --- ADMIN EXPORTS ---
     public function adminCsv()
     {
-        $kebuns = \App\Models\Kebun::with(['user', 'fase'])->get();
+        $kebuns = \App\Models\Kebun::with(['user', 'fase', 'suhu'])->get();
         $filename = "admin_rekapitulasi_kebun_" . date('Ymd_His') . ".csv";
 
         $headers = [
@@ -49,7 +49,7 @@ class ExportController extends Controller
     public function adminPdf()
     {
         $title = "Laporan Rekapitulasi Global Kebun & Petani";
-        $kebuns = \App\Models\Kebun::with(['user', 'fase'])->get();
+        $kebuns = \App\Models\Kebun::with(['user', 'fase', 'suhu'])->get();
         return view('export.print', compact('kebuns', 'title'))->with('role', 'admin');
     }
 
@@ -73,19 +73,19 @@ class ExportController extends Controller
 
         $callback = function() use($riwayats) {
             $file = fopen('php://output', 'w');
-            fputcsv($file, ['No', 'Nama Kebun', 'Tanggal Berbunga', 'Tanggal Panen', 'Lama Siklus (Hari)', 'Total GDD', 'Kualitas Panen', 'Catatan/Hasil (Kg)']);
+            fputcsv($file, ['No', 'Nama Kebun', 'Tanggal Berbunga', 'Tanggal Panen', 'Lama Siklus (Hari)', 'Total GDD', 'Hasil Panen (Kg)', 'Catatan']);
 
             foreach ($riwayats as $i => $r) {
-                $lama = \Carbon\Carbon::parse($r->tanggal_berbunga)->diffInDays(\Carbon\Carbon::parse($r->tanggal_panen));
+                $lama = $r->tanggal_berbunga ? \Carbon\Carbon::parse($r->tanggal_berbunga)->diffInDays(\Carbon\Carbon::parse($r->tanggal_panen)) : 0;
                 fputcsv($file, [
                     $i + 1,
                     $r->kebun->nama_kebun ?? '-',
-                    $r->tanggal_berbunga,
+                    $r->tanggal_berbunga ?? '-',
                     $r->tanggal_panen,
-                    $lama . ' Hari',
-                    $r->total_gdd_akhir,
-                    $r->kualitas_panen,
-                    $r->catatan
+                    $r->tanggal_berbunga ? $lama . ' Hari' : '-',
+                    round($r->total_gdd, 1),
+                    round($r->hasil_panen_kg, 1),
+                    $r->catatan ?? '-'
                 ]);
             }
             fclose($file);
@@ -109,7 +109,7 @@ class ExportController extends Controller
     public function pengepulCsv()
     {
         // Hanya export yang siap panen
-        $kebuns = \App\Models\Kebun::with(['user', 'fase'])->get()->filter(function($k) {
+        $kebuns = \App\Models\Kebun::with(['user', 'fase', 'suhu'])->get()->filter(function($k) {
             return $k->is_siap_panen;
         });
 
@@ -149,7 +149,7 @@ class ExportController extends Controller
     public function pengepulPdf()
     {
         $title = "Laporan Rute Logistik Kebun Siap Panen";
-        $kebuns = \App\Models\Kebun::with(['user', 'fase'])->get()->filter(function($k) {
+        $kebuns = \App\Models\Kebun::with(['user', 'fase', 'suhu'])->get()->filter(function($k) {
             return $k->is_siap_panen;
         });
         return view('export.print', compact('kebuns', 'title'))->with('role', 'pengepul');

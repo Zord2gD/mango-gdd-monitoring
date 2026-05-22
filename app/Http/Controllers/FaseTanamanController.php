@@ -6,6 +6,7 @@ use App\Models\FaseTanaman;
 use App\Models\Kebun;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Requests\StoreFaseRequest;
 
 class FaseTanamanController extends Controller
 {
@@ -35,18 +36,12 @@ class FaseTanamanController extends Controller
         return view('fase.create', compact('kebun'));
     }
 
-    public function store(Request $request)
+    public function store(StoreFaseRequest $request)
     {
-        if (Auth::user()->role === 'admin') {
-            return redirect('/admin/dashboard');
-        }
+        // Validasi sudah dihandle oleh StoreFaseRequest
+        // Authorize: hanya petani (dicek di Form Request)
 
-        $request->validate([
-            'kebun_id'         => 'required|exists:kebuns,id',
-            'tanggal_berbunga' => 'required|date',
-        ]);
-
-        // Pastikan kebun milik petani ini
+        // Pastikan kebun benar-benar milik petani ini
         $kebun = Kebun::where('id', $request->kebun_id)
                       ->where('user_id', Auth::id())
                       ->firstOrFail();
@@ -81,6 +76,15 @@ class FaseTanamanController extends Controller
         if (Auth::user()->role !== 'admin' && $fase->kebun->user_id !== Auth::id()) {
             abort(403);
         }
+
+        // Validasi yang sebelumnya tidak ada sama sekali!
+        $request->validate([
+            'tanggal_berbunga' => 'required|date|before_or_equal:today',
+        ], [
+            'tanggal_berbunga.required'        => 'Tanggal berbunga wajib diisi.',
+            'tanggal_berbunga.date'            => 'Format tanggal tidak valid.',
+            'tanggal_berbunga.before_or_equal' => 'Tanggal berbunga tidak boleh di masa depan.',
+        ]);
 
         $fase->update([
             'tanggal_berbunga' => $request->tanggal_berbunga,

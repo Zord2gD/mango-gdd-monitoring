@@ -33,7 +33,7 @@ class DashboardController extends Controller
     {
         $totalKebun    = Kebun::count();
         $totalPetani   = User::where('role', 'petani')->count();
-        $allKebun      = Kebun::with(['fase'])->withSum('suhuAktif as total_gdd_db', 'suhu_harian.gdd')->get();
+        $allKebun      = Kebun::with(['user', 'fase', 'suhu'])->get();
         $siapPanen     = $allKebun->filter(fn($k) => $k->is_siap_panen)->count();
         $avgGdd        = $allKebun->avg('total_gdd');
 
@@ -46,8 +46,7 @@ class DashboardController extends Controller
     public function petani()
     {
         $kebun = Kebun::where('user_id', Auth::id())
-            ->with(['fase'])
-            ->withSum('suhuAktif as total_gdd_db', 'suhu_harian.gdd')
+            ->with(['fase', 'suhu'])
             ->get();
 
         // Calculate summary using collections
@@ -76,9 +75,8 @@ class DashboardController extends Controller
      */
     public function pengepul()
     {
-        // Eager load user & fase, and calculate total_gdd directly via DB aggregation
-        $allKebun = Kebun::with(['user', 'fase'])
-            ->withSum('suhuAktif as total_gdd_db', 'suhu_harian.gdd')
+        // Eager load user, fase, & suhu for Hybrid Caching
+        $allKebun = Kebun::with(['user', 'fase', 'suhu'])
             ->latest()
             ->get();
 

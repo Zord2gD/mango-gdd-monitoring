@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Kebun;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Requests\StoreKebunRequest;
 
 class KebunController extends Controller
 {
@@ -31,20 +32,10 @@ class KebunController extends Controller
         return view('kebun.create');
     }
 
-    public function store(Request $request)
+    public function store(StoreKebunRequest $request)
     {
-        if (Auth::user()->role === 'admin') {
-            return redirect('/admin/dashboard')->with('error', 'Admin tidak dapat menambah kebun.');
-        }
-
-        $request->validate([
-            'nama_kebun'  => 'required',
-            'lokasi'      => 'required',
-            'latitude'    => 'nullable|numeric|between:-90,90',
-            'longitude'   => 'nullable|numeric|between:-180,180',
-            'jumlah_pohon'=> 'required|integer|min:1',
-            'jenis_mangga'=> 'required',
-        ]);
+        // Validasi sudah dihandle oleh StoreKebunRequest
+        // Authorize: hanya petani (dicek di Form Request)
 
         Kebun::create([
             'user_id'     => Auth::id(),

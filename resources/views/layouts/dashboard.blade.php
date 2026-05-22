@@ -111,7 +111,7 @@
                 }
             @endphp
             <div style="margin: 20px 5px 5px; padding: 12px; background: rgba(255,255,255,0.06); border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); box-shadow: inset 0 2px 10px rgba(0,0,0,0.1);">
-                <div style="font-size: 10px; color: #a7c3b4; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; font-weight: 700;">Pendapatan GDD Hari Ini</div>
+                <div style="font-size: 10px; color: #a7c3b4; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; font-weight: 700;">Akumulasi GDD Hari Ini</div>
                 <div style="display: flex; align-items: center; gap: 12px;">
                     <div style="width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, #f59e0b, #d97706); display: flex; align-items: center; justify-content: center; color: white; font-size: 16px; box-shadow: 0 4px 10px rgba(245, 158, 11, 0.3);">
                         <i class="fa-solid fa-sun"></i>

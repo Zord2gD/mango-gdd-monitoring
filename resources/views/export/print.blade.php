@@ -133,8 +133,8 @@
                     <th>Tanggal Panen</th>
                     <th>Lama Siklus</th>
                     <th>Total GDD</th>
-                    <th>Kualitas</th>
-                    <th>Hasil (Kg) / Catatan</th>
+                    <th>Hasil (Kg)</th>
+                    <th>Catatan</th>
                 </tr>
             </thead>
             <tbody>
@@ -142,12 +142,12 @@
                     <tr>
                         <td>{{ $i + 1 }}</td>
                         <td>{{ $r->kebun->nama_kebun ?? '-' }}</td>
-                        <td>{{ \Carbon\Carbon::parse($r->tanggal_berbunga)->format('d/m/Y') }}</td>
+                        <td>{{ $r->tanggal_berbunga ? \Carbon\Carbon::parse($r->tanggal_berbunga)->format('d/m/Y') : '-' }}</td>
                         <td>{{ \Carbon\Carbon::parse($r->tanggal_panen)->format('d/m/Y') }}</td>
-                        <td>{{ \Carbon\Carbon::parse($r->tanggal_berbunga)->diffInDays(\Carbon\Carbon::parse($r->tanggal_panen)) }} Hari</td>
-                        <td>{{ $r->total_gdd_akhir }}</td>
-                        <td>{{ $r->kualitas_panen }}</td>
-                        <td>{{ $r->catatan }}</td>
+                        <td>{{ $r->tanggal_berbunga ? \Carbon\Carbon::parse($r->tanggal_berbunga)->diffInDays(\Carbon\Carbon::parse($r->tanggal_panen)) . ' Hari' : '-' }}</td>
+                        <td>{{ round($r->total_gdd, 1) }}</td>
+                        <td>{{ round($r->hasil_panen_kg, 1) }} Kg</td>
+                        <td>{{ $r->catatan ?: '-' }}</td>
                     </tr>
                 @endforeach
             </tbody>
